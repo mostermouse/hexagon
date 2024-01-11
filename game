@@ -1,0 +1,229 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <conio.h>
+#include <time.h>
+#include <stdbool.h>
+
+#define DINO_BOTTOM_Y 12
+#define TREE_BOTTOM_Y 20
+#define TREE_BOTTOM_X 45
+
+#define SCORE_INCREMENT 1
+#define MAX_SCORE_DIFFICULTY_INCREASE 5
+#define MAX_SCORE_SKIN_CHANGE 10
+
+int score;
+int difficultyLevel = 1;
+bool skinChanged = false;
+
+void SetConsoleView() {
+    system("mode con:cols=100 line=25");
+}
+
+int GetKeyDown() {
+    if (_kbhit() != 0) {
+        return _getch();
+    }
+    return 0;
+}
+
+void GotoXY(int x, int y) {
+    COORD Pos;
+    Pos.X = 2 * x;
+    Pos.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
+}
+
+void DrawGameover() {
+    system("cls");
+    int x = 18;
+    int y = 8;
+    GotoXY(x, y);
+    printf("====================================");
+    GotoXY(x, y + 1);
+    printf("============ 게임 오버 =============");
+    GotoXY(x, y + 2);
+    printf("====================================");
+    GotoXY(x, y + 3);
+    printf("            점수: %d \n", score);
+
+    system("pause");
+}
+
+void DrawDino(int dinoY, bool *legFlag) {
+    GotoXY(0, dinoY);
+
+    if (*legFlag) {
+        printf("         $$     \n");
+        printf("        $$$     \n");
+        printf("        $$$     \n");
+        printf("        $$$$$   \n");
+        printf("       $$$ $$$  \n");
+        printf("       $$$$$$   \n");
+        printf("      $$$$$     \n");
+        printf(" $$  $$$$$$$$$$$\n");
+        printf(" $$$$$$$$$$$    \n");
+        printf("  $$$$$$$$$$    \n");
+        printf("    $$$$$$$$    \n");
+        printf("     $    $$$    \n");
+        printf("     $$          ");
+    } else {
+        printf("         $$     \n");
+        printf("        $$$     \n");
+        printf("        $$$     \n");
+        printf("        $$$$$   \n");
+        printf("       $$$ $$$  \n");
+        printf("       $$$$$$   \n");
+        printf("      $$$$$     \n");
+        printf(" $$  $$$$$$$$$$$\n");
+        printf(" $$$$$$$$$$$    \n");
+        printf("  $$$$$$$$$$    \n");
+        printf("    $$$$$$$$    \n");
+        printf("     $$$  $     \n");
+        printf("          $$    ");
+    }
+
+    *legFlag = !(*legFlag); // 다리 움직임 반전
+}
+
+void DrawDino2(int dinoY, bool *legFlag) {
+    GotoXY(0, dinoY);
+
+    if (*legFlag) {
+        printf("   \\ \\ \n");
+        printf("    \\_\\\n");
+        printf("   (o o)\n");
+        printf("  __\\v/__\n");
+        printf(" /     |     \n");
+        printf("/   ___|___   \n");
+        printf(" $$  $$$$$$$$$$$\n");
+        printf(" $$$$$$$$$$$    \n");
+        printf("  $$$$$$$$$$    \n");
+        printf("    $$$$$$$$    \n");
+        printf("     $$$  $     \n");
+        printf("          $$    ");
+    } else {
+        printf("   \\ \\ \n");
+        printf("    \\_\\\n");
+        printf("   (o o)\n");
+        printf("  __\\v/__\n");
+        printf(" /   / |  \\\n");
+        printf("/   /  |   \\ \n");
+         printf(" $$  $$$$$$$$$$$\n");
+        printf(" $$$$$$$$$$$    \n");
+        printf("  $$$$$$$$$$    \n");
+        printf("    $$$$$$$$    \n");
+        printf("     $$$  $     \n");
+        printf("          $$    ");
+    }
+
+    *legFlag = !(*legFlag); // 다리 움직임 반전
+}
+
+void DrawTree(int treeX) {
+    GotoXY(treeX, TREE_BOTTOM_Y);
+    printf("  $$    ");
+    GotoXY(treeX, TREE_BOTTOM_Y + 1);
+    printf(" $$$$  ");
+    GotoXY(treeX, TREE_BOTTOM_Y + 2);
+    printf("$$$$$$");
+    GotoXY(treeX, TREE_BOTTOM_Y + 3);
+    printf("  $$    ");
+    GotoXY(treeX, TREE_BOTTOM_Y + 4);
+    printf("  $$    ");
+}
+
+bool isCollision(int treeX, int dinoY) {
+    GotoXY(10, 1);
+    printf("treeX : %d, dinoY : %d", treeX, dinoY);
+
+    if (treeX <= 8 && treeX >= 4 && dinoY > 8)
+        return true;
+
+    return false;
+}
+
+void UpdateDifficultyAndSkin() {
+    if (score > MAX_SCORE_DIFFICULTY_INCREASE * difficultyLevel) {
+        difficultyLevel++;
+        printf("\n[난이도 상승] 현재 난이도: %d\n", difficultyLevel);
+    }
+
+    if (score > MAX_SCORE_SKIN_CHANGE && !skinChanged) {
+        skinChanged = true;
+        printf("\n[공룡 모습 변경]\n");
+    }
+}
+
+int main(void) {
+    SetConsoleView();
+    while (1) {
+        bool isJumping = false;
+        bool isBottom = true;
+        int gravity = 5;
+        int treeMove = 2;
+
+        int dinoY = DINO_BOTTOM_Y;
+        int treeX = TREE_BOTTOM_X;
+        bool legFlag = true;
+
+        score = 0;
+        difficultyLevel = 1;
+        skinChanged = false;
+
+        while (true) {
+            if (isCollision(treeX, dinoY))
+                break;
+
+            if (GetKeyDown() == 'z' && isBottom) {
+                isJumping = true;
+                isBottom = false;
+            }
+
+            if (isJumping)
+                dinoY -= gravity;
+            else
+                dinoY += gravity;
+
+            if (dinoY >= DINO_BOTTOM_Y) {
+                dinoY = DINO_BOTTOM_Y;
+                isBottom = true;
+            }
+
+            treeX -= treeMove * difficultyLevel;
+            if (treeX <= 0) {
+                treeX = TREE_BOTTOM_X;
+                score += SCORE_INCREMENT;
+
+                // 모양 변경 체크
+                UpdateDifficultyAndSkin();
+                if (skinChanged && score % 5 == 0) {
+                    legFlag = !legFlag; // 다리 움직임 바꾸기
+                    skinChanged = false; // 모양 변경 후 초기화
+                }
+            }
+
+            if (dinoY <= 3)
+                isJumping = false;
+
+            if (score >= 5) {
+                DrawDino2(dinoY, &legFlag);
+            } else {
+                DrawDino(dinoY, &legFlag);
+            }
+
+            DrawTree(treeX);
+
+            UpdateDifficultyAndSkin();
+
+            GotoXY(0, 0);
+            printf("점수: %d \n", score);
+
+            Sleep(60);
+            system("cls");
+        }
+        DrawGameover();
+    }
+    // return 0;
+}
